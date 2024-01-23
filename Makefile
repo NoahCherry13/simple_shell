@@ -8,6 +8,10 @@ all: check
 # rule for making the parser.o  that is needed by all the test programs
 myshell_parser.o: myshell_parser.c myshell_parser.h
 
+# rule for practicing and testing string file
+parser_test.o: parser_test.c
+parser_test: parser_test.o
+
 # each of the test files depend on their own .c and myshell_parser.h
 #  add another time for each test, e.g., test_simple_pipe.o line below
 test_simple_input.o: test_simple_input.c myshell_parser.h
@@ -29,4 +33,4 @@ check: checkprogs
 	/bin/bash run_tests.sh $(test_files)
 
 clean:
-	rm -f *~ *.o $(test_files) $(test_o_files)
+	rm -f *~ *.o $(test_files) $(test_o_files) ./parser_test
