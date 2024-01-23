@@ -10,7 +10,9 @@ myshell_parser.o: myshell_parser.c myshell_parser.h
 
 # rule for practicing and testing string file
 parser_test.o: parser_test.c
+pipeline_heap_test.o: pipeline_heap_test.c
 parser_test: parser_test.o
+pipeline_heap_test: pipeline_heap_test.o 
 
 # each of the test files depend on their own .c and myshell_parser.h
 #  add another time for each test, e.g., test_simple_pipe.o line below
