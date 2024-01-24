@@ -25,6 +25,8 @@ test_simple_pipe : test_simple_pipe.o myshell_parser.o
 
 # Add any additional tests here
 test_files=./test_simple_input ./test_simple_pipe
+demo_files=./parser_test ./pipeline_heap_test
+
 
 .PHONY: clean check checkprogs all
 
@@ -35,4 +37,4 @@ check: checkprogs
 	/bin/bash run_tests.sh $(test_files)
 
 clean:
-	rm -f *~ *.o $(test_files) $(test_o_files) ./parser_test
+	rm -f *~ *.o $(test_files) $(test_o_files) $(demo_files)
