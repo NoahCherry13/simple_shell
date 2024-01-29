@@ -14,3 +14,7 @@ echo "______________TWO COMMANDS PIPE 1 REDIRECT IN 2 REDIRECT OUT______________
 ./parser_test "command1 < file1>file2|command2> file2"
 echo "______________ONE COMMAND REDIRECT OUT REDIRECT IN_________________"
 ./parser_test "command1>file1<file2"
+echo "______________ONE COMMAND TWO ARGUMENTS_________________"
+./parser_test "command1 -a1 -a2"
+echo "______________ONE COMMAND REDIRECT OUT TWO ARGUMENTS_________________"
+./parser_test "command1 -a1 -a2>file1"

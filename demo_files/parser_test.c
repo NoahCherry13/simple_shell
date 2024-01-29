@@ -4,16 +4,38 @@
 #include "stddef.h"
 #include <stdlib.h>
 
+void get_args(char *token, const char *delim)
+{
+  char *arg_saveptr = NULL;
+  char *arg_token = strtok_r(token, delim, &arg_saveptr);
+
+  while (arg_token != NULL){
+    arg_token = strtok_r(NULL, " -", &arg_saveptr);
+    printf("ARGUMENTS: %s\n", arg_token);
+  }
+  free(arg_token);
+}
+
 void check_redirect(char *token, const char *delim)
 {
   char *redirect_saveptr = NULL;
   char *redirect_token = strtok_r(token, delim, &redirect_saveptr);
-  //while (redirect_token != NULL){
-  redirect_token = strtok_r(NULL, " &<>", &redirect_saveptr);
-  if (delim[0] == '<') printf("REDIRECTING IN: %s\n", redirect_token);
-  else printf("REDIRECTING OUT: %s\n", redirect_token);
-    //redirect_token = strtok_r(NULL, " &<>", &redirect_saveptr);
-  //}
+  char *arg_token = strdup(redirect_token);
+  //get_args(arg_token, " -");
+  redirect_token = strtok_r(NULL, " -&<>", &redirect_saveptr);
+  get_args(arg_token, " -");
+  if (delim[0] == '<') {
+    printf("REDIRECTING IN: %s\n", redirect_token);
+  } else {
+    printf("REDIRECTING OUT: %s\n", redirect_token);
+  }
+  free(arg_token);
+  /*
+  while (redirect_token != NULL){
+    redirect_token = strtok_r(NULL, " -&<>", &redirect_saveptr);
+    printf("ARGUMENTS: %s\n", redirect_token);
+  }
+  */
 }
 
 int main(int argc, char* argv[])
