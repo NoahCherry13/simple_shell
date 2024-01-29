@@ -11,6 +11,7 @@
  * Support and testing for provided data structures    
  */
 
+//create linked list of pipeline commands
 void link_pipe(struct pipeline *pl)
 {
   int n = 100;
@@ -31,29 +32,26 @@ void link_pipe(struct pipeline *pl)
   return;
 }
 
+//frees all commands in pipeline
 void free_pipe(struct pipeline *pl)
 {
   struct pipeline_command *free_ptr;
-  
-  link_pipe(&pl);
-  
   //clear pointers
   for(int i = 0; i < 100; i++){
     free_ptr = pl->commands;
-    pl.commands = pl->commands->next;
+    pl->commands = pl->commands->next;
     free(free_ptr);
   }
   return;
 }
 
+
 int main()
 {
   struct pipeline pl;
-  struct pipeline_command *free_ptr;
 
   //connect n commands in a pipe
   link_pipe(&pl);
-  
   //free mem in pipe
   free_pipe(&pl);
 

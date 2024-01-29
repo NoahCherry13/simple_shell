@@ -1,10 +1,12 @@
 #include "myshell_parser.h"
 #include "stddef.h"
-
+#include <stdio.h>
+#include <string.h>
 struct pipeline *pipeline_build(const char *command_line)
 {
 	// TODO: Implement this function
-	return NULL;
+        
+        return NULL;
 }
 
 void pipeline_free(struct pipeline *pipeline)
