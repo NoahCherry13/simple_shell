@@ -9,9 +9,9 @@ void get_args(char *token, const char *delim)
   char *outer_saveptr = NULL;
   char *arg_saveptr = NULL;
 
-  outer_token = strtok_r(token, "<>", &outer_saveptr);
+  char *outer_token = strtok_r(token, "<>", &outer_saveptr);
 
-  while (token != NULL) {
+  while (outer_token != NULL) {
     char *arg_token = strtok_r(outer_token, " -", &arg_saveptr);
     while (arg_token != NULL){
       printf("ARGS: %s\n", arg_token);
@@ -19,7 +19,7 @@ void get_args(char *token, const char *delim)
     }
     outer_token = strtok_r(NULL, "<>", &outer_saveptr);
   }
-  return 0;
+  return;
 }
 
 void check_redirect(char *token, const char *delim)
