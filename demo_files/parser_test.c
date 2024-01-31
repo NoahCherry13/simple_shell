@@ -26,7 +26,9 @@ void get_args(char *token, const char *delim)
 void check_redirect(char *token, const char *delim)
 {
   char *redirect_saveptr = NULL;
+  //skip left half of redirect
   char *redirect_token = strtok_r(token, delim, &redirect_saveptr);
+  //get only redirect path (removes arguments after <>)
   redirect_token = strtok_r(NULL, " &<>", &redirect_saveptr);
 
   if (delim[0] == '<') {
