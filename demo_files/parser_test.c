@@ -8,15 +8,18 @@ void get_args(char *token, const char *delim)
 {
   char *outer_saveptr = NULL;
   char *arg_saveptr = NULL;
-
+  int is_cmd = 1;
+  
   char *outer_token = strtok_r(token, "<>", &outer_saveptr);
-
+  
   while (outer_token != NULL) {
-    char *arg_token = strtok_r(outer_token, " -", &arg_saveptr);
-    arg_token = strtok_r(NULL, " -", &arg_saveptr);
+    char *arg_token = strtok_r(outer_token, " ", &arg_saveptr);
+    if (is_cmd) printf("PARSED COMMAND: %s\n", arg_token);
+    is_cmd = false;
+    arg_token = strtok_r(NULL, " ", &arg_saveptr);
     while (arg_token != NULL){
       printf("ARGS: %s\n", arg_token);
-      arg_token = strtok_r(NULL, " -", &arg_saveptr);
+      arg_token = strtok_r(NULL, " ", &arg_saveptr);
     }
     outer_token = strtok_r(NULL, "<>", &outer_saveptr);
   }
@@ -52,7 +55,7 @@ int main(int argc, char* argv[])
     char *rin_cpy = strdup(token);
     char *rout_cpy = strdup(token);
     char *arg_cpy = strdup(token);
-
+   
     check_redirect(rin_cpy, redirect_in_delim);
     check_redirect(rout_cpy, redirect_out_delim);
     get_args(arg_cpy, " -");
