@@ -23,30 +23,30 @@ int get_num_commands(struct pipeline *pl){
   return num_commands;
 }
 
-void mod_pipes(int sib_status, int pipe_num, int **pipefd)
+void mod_pipes(int sib_status, int command_index, int **pipefd, int command_count)
 {
-  switch(sib_status){
-  case FIRST:                               //only child
-    //close(pipefd[pipe_num][0]);
-    //close(pipefd[pipe_num][1]);
-    break;
-  case ONLY:                               //first sibling
-    close(pipefd[pipe_num][0]);
-    dup2(pipefd[pipe_num][1], 1); 
-    break;
-  case MIDDLE:                               //middle child
-    dup2(pipefd[pipe_num][1], 1);
-    break;
-  case LAST:                               //last child
-    close(pipefd[pipe_num][1]);
-    dup2(pipefd[pipe_num][0], 0);
-    break;
-  default:
-    break;
+  printf("pipe_num: %d\n", sib_status);
+  for(int i = 0; i <= command_count; i++){
+    if(sib_status == FIRST && i == command_index){
+      dup2(pipefd[i][1], 1);
+      close(pipefd[i][0]);
+    }else if((sib_status == MIDDLE) && ((i == command_index)||(i == command_index-1))){
+      dup2(pipefd[i][1], 1);
+      dup2(pipefd[i-1][0], 0);
+      close(pipefd[i-1][1]);
+      close(pipefd[i][0]);
+    }else if(sib_status == LAST && i == command_index-1){
+      dup2(pipefd[i][0], 0);
+      close(pipefd[i][1]);
+    }else{
+      close(pipefd[i][0]);
+      close(pipefd[i][1]);	  
+    }
   }
+
 }
 
-pid_t fork_child(int sib_status, int pipe_num, int **fd_arr)
+pid_t fork_child(int sib_status, int pipe_num, int **fd_arr, int num_pipes)
 {
   pid_t cpid;
   cpid = fork();
@@ -54,15 +54,15 @@ pid_t fork_child(int sib_status, int pipe_num, int **fd_arr)
     perror("fork failed\n");
     exit(-1);
   } else if (cpid == 0) {
-    if (sib_status)mod_pipes(sib_status, pipe_num, fd_arr);
+    if (sib_status !=0 )mod_pipes(sib_status, pipe_num, fd_arr, num_pipes);
   }
   return cpid;
 }
 
-int **create_fd(int num_pipe){
+int **create_fd(int num_commands){
   int **fd_array;
-  fd_array = (int **)malloc(sizeof(num_pipe * sizeof(int *)));
-  for (int i = 0; i < num_pipe; i ++){
+  fd_array = (int **)malloc(sizeof(num_commands * sizeof(int *)));
+  for (int i = 0; i < num_commands; i ++){
     fd_array[i] = (int *)malloc(2*sizeof(int));
     pipe(fd_array[i]);
   }
@@ -96,24 +96,24 @@ int main(int argc, char* argv[])
     pl = pipeline_build(input); 
     num_commands = get_num_commands(pl);
     num_pipes = num_commands - 1;
-    fd_arr = create_fd(num_pipes);
-
+    fd_arr = create_fd(num_commands);
+    
     if(pl->commands == NULL){
       continue;
     } else if (pl->commands->next == NULL){
-      cpid = fork_child(ONLY, child_number, fd_arr);
+      cpid = fork_child(ONLY, child_number, fd_arr, num_pipes);
       if (cpid) child_number ++;
     } else {
       pipeline_index = pl->commands;
-      cpid = fork_child(FIRST, child_number, fd_arr);
+      cpid = fork_child(FIRST, child_number, fd_arr, num_pipes);
       if (cpid) child_number ++;
-      while(!cpid && pipeline_index->next != NULL){
+      while(cpid && pipeline_index->next != NULL){
 	pipeline_index = pipeline_index->next;
 	if(pipeline_index->next == NULL){
-	  cpid = fork_child(LAST, child_number, fd_arr);
+	  cpid = fork_child(LAST, child_number, fd_arr, num_pipes);
 	  if (cpid) child_number ++;
 	} else {
-	  cpid = fork_child(MIDDLE, child_number, fd_arr);
+	  cpid = fork_child(MIDDLE, child_number, fd_arr, num_pipes);
 	  if (cpid) child_number ++;
 	}
 	spawn++;
@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
       }
     } else {
       pipeline_index = pl->commands;
-      for(int i = 1; i < child_number; i++){
+      for(int i = 0; i < child_number; i++){
 	pipeline_index = pipeline_index->next;
       }
       execvp(pipeline_index->command_args[0], pipeline_index->command_args);
@@ -139,5 +139,5 @@ int main(int argc, char* argv[])
  
   
   //create fd array
-  free_fd(fd_arr, num_pipes);
+  free_fd(fd_arr, num_commands);
 }
