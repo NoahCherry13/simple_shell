@@ -7,6 +7,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#define MAX_INPUT 512
 
 int get_num_commands(struct pipeline *pl){
   int num_commands = 1;
@@ -22,8 +23,8 @@ void mod_pipes(int sib_status, int pipe_num, int **pipefd)
 {
   switch(sib_status){
   case 0:                               //only child
-    close(pipefd[pipe_num][0]);
-    close(pipefd[pipe_num][1]);
+    //close(pipefd[pipe_num][0]);
+    //close(pipefd[pipe_num][1]);
     break;
   case 1:                               //first sibling
     close(pipefd[pipe_num][0]);
@@ -41,14 +42,14 @@ void mod_pipes(int sib_status, int pipe_num, int **pipefd)
   }
 }
 
-pid_t fork_child(char *prog, char *const argv[], int sib_status, int pipe_num, int **fd_arr)
+pid_t fork_child(char *args[], int sib_status, int pipe_num, int **fd_arr)
 {
   pid_t cpid;
   cpid = fork();
   if (cpid < 0) {
     perror("fork failed\n");
     exit(-1);
-  } else if (cpid == 0) {
+  } else if (cpid == 0 && sib_status) {
     mod_pipes(sib_status, pipe_num, fd_arr);
   }
   return cpid;
@@ -73,11 +74,44 @@ void free_fd(int **fd, int num_pipe)
 
 int main(int argc, char* argv[])
 {
-  struct pipeline *pl = build_pipeline(argv);
-  int num_commands = get_num_commands(pl);
-  int num_pipe = num_commands - 1;
-  // create fd array
-  int **fd_array;
-  fd_array = create_fd(num_pipe);
-  free_fd(fd_array, num_pipe);
+  int num_commands;
+  int status;
+  int spawn = 0;
+  int num_pipes;
+  int **fd_arr;
+  int cpid;
+  char input[MAX_INPUT];
+  struct pipeline *pl;
+  struct pipeline_command *pipeline_index = NULL;
+
+
+  while (fgets(input, MAX_INPUT, stdin) != NULL){
+
+    pl = pipeline_build(input); 
+    num_commands = get_num_commands(pl);
+    num_pipes = num_commands - 1;
+    fd_arr = create_fd(num_pipes);
+    pipeline_index = pl->commands;
+    while(pipeline_index->next != NULL){
+      pipeline_index = pipeline_index->next;
+      cpid = fork_child(,0, num_pipes, fd_arr);
+      spawn++;
+    }
+    if(cpid != 0){
+      while(spawn){
+	wait(&status);
+	spawn--;
+	printf("CHILD MURDERED (brutally)\n");
+      }
+    } else {
+      execvp(pl->commands->command_args[0], pl->commands->command_args);
+    }
+     
+    
+  }
+ 
+  
+  //create fd array
+   
+  free_fd(fd_arr, num_pipes);
 }
