@@ -8,6 +8,10 @@ all: check
 # rule for making the parser.o  that is needed by all the test programs
 myshell_parser.o: myshell_parser.c myshell_parser.h
 
+#rule for making myshell
+myshell.o: myshell.c myshell_parser.h
+myshell: myshell.o
+
 # rule for practicing and testing string file
 parser_test.o: parser_test.c
 pipeline_heap_test.o: pipeline_heap_test.c
