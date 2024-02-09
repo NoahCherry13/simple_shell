@@ -6,6 +6,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <signal.h>
 
 #define MAX_INPUT 512
 #define ONLY      0
@@ -62,6 +64,22 @@ void mod_pipes(int sib_status, int command_index, int **pipefd, int command_coun
   }
 }
 
+void redirect_child(struct pipeline *pl, int **fd, int command_num){
+  struct pipeline_command *command_index = pl->commands;
+  for(int i = 0; i < command_num; i ++){
+    command_index = command_index->next;
+  }
+  if(command_index->redirect_in_path != NULL){
+    int file = open(command_index->redirect_in_path, O_RDWR | O_CREAT, 0777);
+    dup2(file, 0);
+  }
+
+  if(command_index->redirect_out_path != NULL){
+    int file = open(command_index->redirect_out_path, O_RDWR | O_CREAT, 0777);
+    dup2(file, 1);
+  }
+}
+
 pid_t fork_child(int sib_status, int pipe_num, int **fd_arr, int num_pipes)
 {
   pid_t cpid;
@@ -75,10 +93,10 @@ pid_t fork_child(int sib_status, int pipe_num, int **fd_arr, int num_pipes)
   return cpid;
 }
 
-int **create_fd(int num_commands){
+int **create_fd(int num_pipes){
   int **fd_array;
-  fd_array = (int **)malloc(sizeof(num_commands * sizeof(int *)));
-  for (int i = 0; i < num_commands; i ++){
+  fd_array = (int **)malloc(sizeof(num_pipes * sizeof(int *)));
+  for (int i = 0; i < num_pipes; i ++){
     fd_array[i] = (int *)malloc(2*sizeof(int));
     pipe(fd_array[i]);
   }
@@ -91,6 +109,12 @@ void free_fd(int **fd, int num_pipe)
     free(fd[i]);
   }
   free(fd);
+}
+
+
+void handle_child(int sig){
+  int status;
+  wait(&status);
 }
 
 int main(int argc, char* argv[])
@@ -106,29 +130,38 @@ int main(int argc, char* argv[])
   struct pipeline *pl;
   struct pipeline_command *pipeline_index = NULL;
 
-
   while (fgets(input, MAX_INPUT, stdin) != NULL){
-
     pl = pipeline_build(input); 
+    if(pl->is_background){
+      struct sigaction sa;
+      sa.sa_handler = &handle_child;
+      sigaction(SIGCHLD, &sa, NULL);
+      printf("is bg\n");
+    }
+
     num_commands = get_num_commands(pl);
     num_pipes = num_commands - 1;
-    fd_arr = create_fd(num_commands);
-    
+    fd_arr = create_fd(num_pipes);
+    //if no command continue
     if(pl->commands == NULL){
       continue;
     } else if (pl->commands->next == NULL){
+      //only child
       cpid = fork_child(ONLY, child_number, fd_arr, num_pipes);
       if (cpid){
 	child_number ++;
 	spawn ++;
-      }
+      } 
+    
     } else {
+      //not only child, start must be first child
       pipeline_index = pl->commands;
       cpid = fork_child(FIRST, child_number, fd_arr, num_pipes);
       if (cpid){
 	child_number ++;
 	spawn ++;
       }
+      //not only child and not first
       while(cpid && pipeline_index->next != NULL){
 	pipeline_index = pipeline_index->next;
 	if(pipeline_index->next == NULL){
@@ -149,20 +182,24 @@ int main(int argc, char* argv[])
 
     //close the fd in the parent
     if(cpid != 0){
-      for(int i = 0; i < num_commands; i++){
+      for(int i = 0; i < num_pipes; i++){
 	close(fd_arr[i][0]);
 	close(fd_arr[i][1]);
       }
-      while(spawn){
-	wait(&status);
-	spawn--;
-	//printf("CHILD MURDERED (brutally)\n#Children Left: %d\n", spawn);
+      if(!pl->is_background){
+	printf("is fg\n");
+	while(spawn){
+	  wait(&status);
+	  spawn--;
+	  //printf("CHILD MURDERED (brutally)\n#Children Left: %d\n", spawn);
+	}
       }
     } else {
       pipeline_index = pl->commands;
       for(int i = 0; i < child_number; i++){
 	pipeline_index = pipeline_index->next;
       }
+      redirect_child(pl, fd_arr, child_number);
       execvp(pipeline_index->command_args[0], pipeline_index->command_args);
     }
     child_number = 0;
