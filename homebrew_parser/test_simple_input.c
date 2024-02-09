@@ -7,7 +7,7 @@
 int
 main(void)
 {
-  struct pipeline* my_pipeline = pipeline_build("ls | cat\n");
+  struct pipeline* my_pipeline = pipeline_build("\n");
   
   // Test that a pipeline was returned
   assert(my_pipeline != NULL);
@@ -15,16 +15,15 @@ main(void)
   assert(my_pipeline->commands != NULL);
   
   // Test the parsed args
-  assert(strcmp("ls", my_pipeline->commands->command_args[0]) == 0);
+  assert(strcmp("", my_pipeline->commands->command_args[0]) == 0);
   assert(my_pipeline->commands->command_args[1] == NULL);
   
   // Test the redirect state
   assert(my_pipeline->commands->redirect_in_path == NULL);
   assert(my_pipeline->commands->redirect_out_path == NULL);
   
-  // Test that there are multiple parsed command in the pipeline
-  assert(my_pipeline->commands->next != NULL);
+  // Test that there is only one parsed command in the pipeline
+  assert(my_pipeline->commands->next == NULL);
   
-  // keep going... what should we be testign next?
   pipeline_free(my_pipeline);
 }

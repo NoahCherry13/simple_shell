@@ -8,6 +8,14 @@ all: check
 # rule for making the parser.o  that is needed by all the test programs
 myshell_parser.o: myshell_parser.c myshell_parser.h
 
+# rule for practicing and testing string file
+parser_test.o: parser_test.c
+pipeline_heap_test.o: pipeline_heap_test.c
+parser_test: parser_test.o
+pipeline_heap_test: pipeline_heap_test.o
+string_arr.o: string_arr.c
+string_arr: string_arr.o
+
 # each of the test files depend on their own .c and myshell_parser.h
 #  add another time for each test, e.g., test_simple_pipe.o line below
 test_simple_input.o: test_simple_input.c myshell_parser.h
@@ -19,6 +27,8 @@ test_simple_pipe : test_simple_pipe.o myshell_parser.o
 
 # Add any additional tests here
 test_files=./test_simple_input ./test_simple_pipe
+demo_files=./parser_test ./pipeline_heap_test
+
 
 .PHONY: clean check checkprogs all
 
@@ -29,4 +39,4 @@ check: checkprogs
 	/bin/bash run_tests.sh $(test_files)
 
 clean:
-	rm -f *~ *.o $(test_files) $(test_o_files)
+	rm -f *~ *.o $(test_files) $(test_o_files) $(demo_files)
