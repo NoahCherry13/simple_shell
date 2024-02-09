@@ -25,25 +25,41 @@ int get_num_commands(struct pipeline *pl){
 
 void mod_pipes(int sib_status, int command_index, int **pipefd, int command_count)
 {
-  printf("pipe_num: %d\n", sib_status);
-  for(int i = 0; i <= command_count; i++){
-    if(sib_status == FIRST && i == command_index){
-      dup2(pipefd[i][1], 1);
-      close(pipefd[i][0]);
-    }else if((sib_status == MIDDLE) && ((i == command_index)||(i == command_index-1))){
-      dup2(pipefd[i][1], 1);
-      dup2(pipefd[i-1][0], 0);
-      close(pipefd[i-1][1]);
-      close(pipefd[i][0]);
-    }else if(sib_status == LAST && i == command_index-1){
-      dup2(pipefd[i][0], 0);
-      close(pipefd[i][1]);
-    }else{
-      close(pipefd[i][0]);
-      close(pipefd[i][1]);	  
+
+  if(sib_status == FIRST){
+    for(int i = 0; i < command_count; i ++){
+      if(i == 0){
+	dup2(pipefd[i][1], 1);
+	close(pipefd[i][0]);
+      }else{
+	close(pipefd[i][0]);
+	close(pipefd[i][1]);
+      }
+    }
+  }else if (sib_status == MIDDLE){
+    for(int i = 0; i < command_count; i ++){
+      if(i == command_index-1){
+	dup2(pipefd[i][0], 0);
+	close(pipefd[i][1]);
+      }else if(i == command_index){
+	dup2(pipefd[i][1],1);
+	close(pipefd[i][0]);
+      }else{
+	close(pipefd[i][0]);
+	close(pipefd[i][1]);
+      }
+    }
+  }else if (sib_status == LAST){
+    for(int i = 0; i < command_count; i ++){
+      if(i == command_index-1){
+	dup2(pipefd[i][0], 0);
+	close(pipefd[i][1]);
+      }else{
+	close(pipefd[i][0]);
+	close(pipefd[i][1]);
+      }
     }
   }
-
 }
 
 pid_t fork_child(int sib_status, int pipe_num, int **fd_arr, int num_pipes)
@@ -102,30 +118,45 @@ int main(int argc, char* argv[])
       continue;
     } else if (pl->commands->next == NULL){
       cpid = fork_child(ONLY, child_number, fd_arr, num_pipes);
-      if (cpid) child_number ++;
+      if (cpid){
+	child_number ++;
+	spawn ++;
+      }
     } else {
       pipeline_index = pl->commands;
       cpid = fork_child(FIRST, child_number, fd_arr, num_pipes);
-      if (cpid) child_number ++;
+      if (cpid){
+	child_number ++;
+	spawn ++;
+      }
       while(cpid && pipeline_index->next != NULL){
 	pipeline_index = pipeline_index->next;
 	if(pipeline_index->next == NULL){
 	  cpid = fork_child(LAST, child_number, fd_arr, num_pipes);
-	  if (cpid) child_number ++;
+	  if (cpid){
+	    child_number ++;
+	    spawn ++;
+	  }
 	} else {
 	  cpid = fork_child(MIDDLE, child_number, fd_arr, num_pipes);
-	  if (cpid) child_number ++;
+	  if (cpid){
+	    child_number ++;
+	    spawn ++;
+	  }
 	}
-	spawn++;
       }
     }
 
-
+    //close the fd in the parent
     if(cpid != 0){
+      for(int i = 0; i < num_commands; i++){
+	close(fd_arr[i][0]);
+	close(fd_arr[i][1]);
+      }
       while(spawn){
 	wait(&status);
 	spawn--;
-	printf("CHILD MURDERED (brutally)\n");
+	//printf("CHILD MURDERED (brutally)\n#Children Left: %d\n", spawn);
       }
     } else {
       pipeline_index = pl->commands;
