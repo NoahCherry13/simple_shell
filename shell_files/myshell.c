@@ -40,7 +40,7 @@ void mod_pipes(int sib_status, int command_index, int **pipefd, int command_coun
     dup2(pipefd[0][1], 1);
   }
   if(sib_status == MIDDLE){
-    printf("COMMAND_INDEX: %d\n", command_index);
+    
     close(pipefd[command_index][0]);
     close(pipefd[command_index-1][1]);
     dup2(pipefd[command_index][1], 1);
@@ -221,7 +221,7 @@ int main(int argc, char* argv[])
 	pipeline_index = pipeline_index->next;
       }
       redirect_child(pl, fd_arr, child_number);
-      printf("COMMAND: %s\n", pipeline_index->command_args[0]);
+      
       execvp(pipeline_index->command_args[0], pipeline_index->command_args);
     }
     child_number = 0;
