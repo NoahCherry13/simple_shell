@@ -71,7 +71,7 @@ void free_fd(int **fd, int num_pipe)
   free(fd);
 }
 
-int main (void)
+int main(int argc, char* argv[])
 {
   struct pipeline *pl = build_pipeline(argv);
   int num_commands = get_num_commands(pl);
