@@ -6,6 +6,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+
 int get_num_commands(struct pipeline *pl){
   int num_commands = 1;
   struct pipeline_command *cmd = pl->commands;
@@ -71,7 +73,9 @@ void free_fd(int **fd, int num_pipe)
 
 int main (void)
 {
-  int num_pipe = 3;
+  struct pipeline *pl = build_pipeline(argv);
+  int num_commands = get_num_commands(pl);
+  int num_pipe = num_commands - 1;
   // create fd array
   int **fd_array;
   fd_array = create_fd(num_pipe);

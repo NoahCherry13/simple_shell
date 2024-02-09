@@ -7,7 +7,7 @@
 int
 main(void)
 {
-  struct pipeline* my_pipeline = pipeline_build("ls\n");
+  struct pipeline* my_pipeline = pipeline_build("\n");
   
   // Test that a pipeline was returned
   assert(my_pipeline != NULL);
@@ -15,7 +15,7 @@ main(void)
   assert(my_pipeline->commands != NULL);
   
   // Test the parsed args
-  assert(strcmp("ls", my_pipeline->commands->command_args[0]) == 0);
+  assert(strcmp("", my_pipeline->commands->command_args[0]) == 0);
   assert(my_pipeline->commands->command_args[1] == NULL);
   
   // Test the redirect state
