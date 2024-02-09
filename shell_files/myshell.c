@@ -25,64 +25,34 @@ int get_num_commands(struct pipeline *pl){
   return num_commands;
 }
 
+
+//closes and dupes pipes 
 void mod_pipes(int sib_status, int command_index, int **pipefd, int command_count)
 {
   for(int i = 0; i < command_count; i ++){
     if(i == command_index-1||i == command_index) continue;
     close(pipefd[i][0]);
     close(pipefd[i][1]);
-    printf("CLOSING %d\n", i);
   }
-  /*
+    
   if(sib_status == FIRST){
-    open(pipefd[0][1]);
+    close(pipefd[0][0]);
     dup2(pipefd[0][1], 1);
   }
   if(sib_status == MIDDLE){
-    open(pipefd[command_index][1]);
-    open(pipefd[command_index-1][0]);
+    printf("COMMAND_INDEX: %d\n", command_index);
+    close(pipefd[command_index][0]);
+    close(pipefd[command_index-1][1]);
     dup2(pipefd[command_index][1], 1);
     dup2(pipefd[command_index-1][0], 0);
   }
-
-/////////////////////////////////////////////
-  if(sib_status == FIRST){
-    for(int i = 0; i < command_count; i ++){
-      if(i == 0){
-	dup2(pipefd[i][1], 1);
-	close(pipefd[i][0]);
-      }else{
-	close(pipefd[i][0]);
-	close(pipefd[i][1]);
-      }
-    }
-  }else if (sib_status == MIDDLE){
-    for(int i = 0; i < command_count; i ++){
-      if(i == command_index-1){
-	dup2(pipefd[i][0], 0);
-	close(pipefd[i][1]);
-      }else if(i == command_index){
-	dup2(pipefd[i][1],1);
-	close(pipefd[i][0]);
-      }else{
-	close(pipefd[i][0]);
-	close(pipefd[i][1]);
-      }
-    }
-  }else if (sib_status == LAST){
-    for(int i = 0; i < command_count; i ++){
-      if(i == command_index-1){
-	dup2(pipefd[i][0], 0);
-	close(pipefd[i][1]);
-      }else{
-	close(pipefd[i][0]);
-	close(pipefd[i][1]);
-      }
-    }
+  if(sib_status == LAST){
+    close(pipefd[command_index-1][1]);
+    dup2(pipefd[command_index-1][0], 0);
   }
-  */
 }
 
+//handles duping files for redirects
 void redirect_child(struct pipeline *pl, int **fd, int command_num){
   struct pipeline_command *command_index = pl->commands;
   for(int i = 0; i < command_num; i ++){
@@ -99,6 +69,7 @@ void redirect_child(struct pipeline *pl, int **fd, int command_num){
   }
 }
 
+//forks parent and calls mod_pipes
 pid_t fork_child(int sib_status, int pipe_num, int **fd_arr, int num_pipes)
 {
   pid_t cpid;
@@ -112,6 +83,7 @@ pid_t fork_child(int sib_status, int pipe_num, int **fd_arr, int num_pipes)
   return cpid;
 }
 
+//function for allocating pipes
 int **create_fd(int num_pipes){
   int **fd_array;
   fd_array = (int **)malloc(sizeof(num_pipes * sizeof(int *)));
@@ -122,6 +94,7 @@ int **create_fd(int num_pipes){
   return fd_array;
 }
 
+//function for freeing the pipes
 void free_fd(int **fd, int num_pipe)
 {
   for (int i = 0; i < num_pipe; i++){
@@ -130,11 +103,13 @@ void free_fd(int **fd, int num_pipe)
   free(fd);
 }
 
+//function for allocating array of child pids
 pid_t *make_child_pid(int num_commands){
   pid_t *cld_pid_arr = malloc(num_commands*sizeof(pid_t));
   return cld_pid_arr;
 }
 
+//SIGCLD function handler
 void handle_child(int sig, siginfo_t *info, void *context){
   int status;
   waitpid(info->si_pid, &status, 0);
@@ -155,6 +130,7 @@ int main(int argc, char* argv[])
   struct pipeline_command *pipeline_index = NULL;
   int n_flag = 0;
 
+  //Checks if -n flag is enabled
   if(argc<2){
     n_flag = 0;
   }else{
@@ -162,10 +138,17 @@ int main(int argc, char* argv[])
       n_flag = 1;
     }
   }
-
   if(!n_flag) printf("my_shell$ ");
+
+  //while loop for running the shell
   while (fgets(input, MAX_INPUT, stdin) != NULL){
-    pl = pipeline_build(input); 
+    
+    if(!strcmp(input, "\n")){
+      if(!n_flag) printf("my_shell$ ");
+      continue;
+    }
+
+    pl = pipeline_build(input);
     num_commands = get_num_commands(pl);
     num_pipes = num_commands - 1;
     fd_arr = create_fd(num_pipes);
@@ -176,7 +159,6 @@ int main(int argc, char* argv[])
       sa.sa_sigaction = &handle_child;
       sa.sa_flags = SA_NOCLDSTOP | SA_RESTART;
       sigaction(SIGCHLD, &sa, NULL);
-      printf("is bg\n");
     }
 
     //if no command continue
@@ -228,7 +210,7 @@ int main(int argc, char* argv[])
 	close(fd_arr[i][1]);
       }
       if(!pl->is_background){
-	printf("is fg\n");
+	
 	for (int i = 0; i < num_commands; i++){
 	  waitpid(child_pid_arr[i], &status, 0);
 	}
@@ -239,6 +221,7 @@ int main(int argc, char* argv[])
 	pipeline_index = pipeline_index->next;
       }
       redirect_child(pl, fd_arr, child_number);
+      printf("COMMAND: %s\n", pipeline_index->command_args[0]);
       execvp(pipeline_index->command_args[0], pipeline_index->command_args);
     }
     child_number = 0;
