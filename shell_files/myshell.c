@@ -239,6 +239,7 @@ int main(int argc, char* argv[])
     child_number = 0;
     free(child_pid_arr);
     if(!n_flag)printf("my_shell$");
+    pipeline_free(pl);
   }
  
   
