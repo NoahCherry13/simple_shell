@@ -58,12 +58,12 @@ void redirect_child(struct pipeline *pl, int **fd, int command_num){
     command_index = command_index->next;
   }
   if(command_index->redirect_in_path != NULL){
-    int file = open(command_index->redirect_in_path, O_RDWR | O_CREAT, 0777);
+    int file = open(command_index->redirect_in_path, O_RDWR | O_CREAT);
     dup2(file, 0);
   }
 
   if(command_index->redirect_out_path != NULL){
-    int file = open(command_index->redirect_out_path, O_RDWR | O_CREAT, 0777);
+    int file = open(command_index->redirect_out_path, O_RDWR | O_CREAT);
     dup2(file, 1);
   }
 }
