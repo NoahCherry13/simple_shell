@@ -38,16 +38,20 @@ void mod_pipes(int sib_status, int command_index, int **pipefd, int command_coun
   if(sib_status == FIRST){
     close(pipefd[0][0]);
     dup2(pipefd[0][1], 1);
+    close(pipefd[0][1]);
   }
   if(sib_status == MIDDLE){    
     close(pipefd[command_index][0]);
     close(pipefd[command_index-1][1]);
     dup2(pipefd[command_index][1], 1);
     dup2(pipefd[command_index-1][0], 0);
+    close(pipefd[command_index][1]);
+    close(pipefd[command_index-1][0]);
   }
   if(sib_status == LAST){
     close(pipefd[command_index-1][1]);
     dup2(pipefd[command_index-1][0], 0);
+    close(pipefd[command_index-1][0]);
   }
 }
 
