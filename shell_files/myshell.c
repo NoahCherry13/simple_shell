@@ -39,8 +39,7 @@ void mod_pipes(int sib_status, int command_index, int **pipefd, int command_coun
     close(pipefd[0][0]);
     dup2(pipefd[0][1], 1);
   }
-  if(sib_status == MIDDLE){
-    
+  if(sib_status == MIDDLE){    
     close(pipefd[command_index][0]);
     close(pipefd[command_index-1][1]);
     dup2(pipefd[command_index][1], 1);
@@ -138,13 +137,12 @@ int main(int argc, char* argv[])
       n_flag = 1;
     }
   }
-  if(!n_flag) printf("my_shell$ ");
+  if(!n_flag) printf("my_shell$");
 
   //while loop for running the shell
   while (fgets(input, MAX_INPUT, stdin) != NULL){
-    
     if(!strcmp(input, "\n")){
-      if(!n_flag) printf("my_shell$ ");
+      if(!n_flag) printf("my_shell$");
       continue;
     }
 
@@ -226,7 +224,7 @@ int main(int argc, char* argv[])
     }
     child_number = 0;
     free(child_pid_arr);
-    if(!n_flag)printf("my_shell$ ");
+    if(!n_flag)printf("my_shell$");
   }
  
   
