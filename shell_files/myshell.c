@@ -63,12 +63,20 @@ void redirect_child(struct pipeline *pl, int **fd, int command_num){
   }
   if(command_index->redirect_in_path != NULL){
     int file = open(command_index->redirect_in_path, O_RDWR | O_CREAT);
+    if(file == -1){
+      fprintf(stderr, "%s No such file or directory\n", command_index->redirect_in_path);
+      exit(-1);
+    }
     dup2(file, 0);
     close(file);
   }
 
   if(command_index->redirect_out_path != NULL){
     int file = open(command_index->redirect_out_path, O_RDWR | O_CREAT);
+    if(file == -1){
+      fprintf(stderr, "%s No such file or directory\n", command_index->redirect_in_path);
+      exit(-1);
+    }
     dup2(file, 1);
     close(file);
   }
